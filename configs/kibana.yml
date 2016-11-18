@@ -1,0 +1,53 @@
+# Heavily based on:
+# https://github.com/kubernetes/kubernetes/blob/master/cluster/addons/fluentd-elasticsearch/kibana-controller.yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kibana-logging
+  namespace: kube-system
+  labels:
+    component: kibana-logging
+    kubernetes.io/cluster-service: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: kibana-logging
+  template:
+    metadata:
+      name: kibana-logging
+      namespace: kube-system
+      labels:
+        component: kibana-logging
+    spec:
+      containers:
+        - name: kibana-logging
+          image: skillshare/kibana-logging:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5601
+              name: kibana
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 600m
+            requests:
+              cpu: 600m
+          env:
+            - name: "ELASTICSEARCH_URL"
+              value: "http://elasticsearch-logging:9200"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana-logging
+  namespace: kube-system
+  labels:
+    component: kibana-logging
+    kubernetes.io/cluster-service: "true"
+spec:
+  selector:
+    component: kibana-logging
+  ports:
+    - port: 80
+      targetPort: kibana

@@ -1,0 +1,16 @@
+actions:
+  1:
+    action: delete_indices
+    description: "Deletes elasticsearch indices older than N days old."
+    filters:
+      - filtertype: kibana
+        exclude: True
+      - filtertype: pattern
+        kind: prefix
+        value: logstash-
+      - filtertype: age
+        source: name
+        direction: older
+        timestring: '%Y.%m.%d'
+        unit: days
+        unit_count: ${DAYS:7}
