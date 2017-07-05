@@ -1,5 +1,5 @@
-FROM kibana:4.6.2
+FROM kibana:5.4.2
 
-MAINTAINER Matt Condon <matt@skillshare.com>
+MAINTAINER Alex Curtin <acurtin@westfield.com>
 
 COPY ./kibana.yml /opt/kibana/config/kibana.yml

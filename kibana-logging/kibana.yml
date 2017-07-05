@@ -6,7 +6,7 @@
 
 # If you are running kibana behind a proxy, and want to mount it at a path,
 # specify that path here. The basePath can't end in a slash.
-server.basePath: '/api/v1/proxy/namespaces/kube-system/services/kibana-logging'
+# server.basePath: '/api/v1/proxy/namespaces/kube-system/services/kibana-logging'
 
 # The maximum payload size in bytes on incoming server requests.
 # server.maxPayloadBytes: 1048576

@@ -1,4 +1,4 @@
-# Kubernetes EFK Stack for AWS
+# Kubernetes EFK Stack for GCP
 
 > The EFK stack for kubernetes clusters.
 
@@ -8,7 +8,7 @@ To deploy these configs to an existing cluster, run `kubectl apply -f ./configs 
 
 After the elasticsearch cluster is finally up (ETA 2 minutes or so), delete all of the existing indexes so that the mapping template applies to the new index.
 
-ssh into one of the pods and run:
+ssh into one of the elastic search pods and run:
 
 ```
 curl -X DELETE localhost:9200/_all
@@ -18,9 +18,13 @@ curl -X DELETE localhost:9200/_all
 
 Note that if you're creating a kibana instance, it will need to bundle all of its resources. This can take up to 7 minutes based on how many cpu requests we've allotted the pod. So go grab a coffee or something and come back once `kubectl -n kube-system logs $pod -f` prints something besides `Optimzing and caching bundles...`
 
-Elasticsearch runs as root to have permissions on the /data volume.
-
 Everything is running in the kube-system namespace.
+
+The Kibana front end will be exposed as a service to the web and available at port `80`. If you want to lock down your Kibana front end to a specific IP range simply add a block like below with your office IP ranges or /32 address. This stanza goes in the service spec at the same level as `type: LoadBalancer`
+
+     loadBalancerSourceRanges:
+    - 10.0.0.8/8
+    - 35.22.22.22/32
 
 ## Notes
 
@@ -40,7 +44,7 @@ This `fluentd` is configured to parse the logs it encounters using various rules
 
 ## Storage
 
-We provide dynamic persistent storage to the elasticsearch nodes by creating them as a `PetSet` (soon to be renamed to `StatefulSet`) with a `persistentVolumeClaimTemplate` field. This field defines a template for a `PVC`, which dynamically creates `EBS` volumes based on a `StorageClass`. In this case we allocate 100Gb gp2 volumes per-elasticsearch-node and attach them to the appropriate kubernetes nodes.
+We provide dynamic persistent storage to the elasticsearch nodes by creating them as a `StatefulSet` with a `persistentVolumeClaimTemplate` field. This field defines a template for a `PVC`, which dynamically creates `GCE` volumes based on a `StorageClass`. In this case we allocate 100Gb gp2 volumes per-elasticsearch-node and attach them to the appropriate kubernetes nodes. This is where the indicies will write to on each elasticsearch node.
 
 ## Networking
 
@@ -50,11 +54,32 @@ The only special situation with networking is the use of two services for elasti
 
 The elasticsearch pod is the most complicated of the definitions. It contains two containers: one elasticsearch instance, and a `curator` sidecar that uses cron to rotate indices once they're older than `DAYS` days old (default 7 days).
 
-Elasticsearch is configured to use /data as `{path.data}`, which is where the EBS volume from above is mounted. The wrapper startup script does two things:
+The `elasticsearch.yml` also requires a special configuration of the kuberenetes nodes themselves to be able to run the latest versions of elasticsearch. 
 
-1. It chowns the `/data` directory. I'm not sure _why_ this is necessary, since elasticsearch is running as root and should be able to access anything, but it is indeed necessary.
+    pod.beta.kubernetes.io/init-containers: '[
+      {
+      "name": "sysctl",
+        "image": "busybox",
+        "imagePullPolicy": "IfNotPresent",
+        "command": ["sysctl", "-w", "vm.max_map_count=262144"],
+        "securityContext": {
+          "privileged": true
+        }
+      }
+    ]'
+This section utilizes an init-container to run the command `sysctl -w vm.max_map_count=262144` on the kubernetes nodes themselves, which is required by Elasticsearch in versions > 4.0.
+
+Elasticsearch is configured to use /data as `{path.data}`, which is where the GCE volume from above is mounted. The wrapper startup script `run.sh` does two things:
+
+1. It chowns the `/data` directory. As of Elasticsearch version 5.x you can no longer run the application as root, so we need to chown this directory before run time after its mounted.
 2. It `PUT`s the index template to the ES API. ES no longer support reading templates from disk, so we've resorted to this hack to add the template to the indices.
-  - One thing to watch out for is that the template won't take effect on the current indices, so we'll have to delete them on the first (and only the first) deployment (to be more specific, only when a new, fresh EBS volume is used).
+  - One thing to watch out for is that the template won't take effect on the current indices, so we'll have to delete them on the first (and only the first) deployment (to be more specific, only when a new, fresh GCE volume is used).
   - To do so, exec into one of the `elasticsearch-logging` pods and run `curl -X DELETE localhost:9200/_all` to delete all of the existing indices.
 
+## Special Thanks
 
+This repository is a heavily modified version of https://github.com/Skillshare/kubernetes-efk which is designed for aws.
+
+## Contributing
+
+If you'd like to improve on this repository or have suggestions, raise a PR or issue. This repository is currently being actively improved and tuned for the latest GKE/GCP updates.

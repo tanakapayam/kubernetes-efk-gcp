@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: fluentd-logging
-          image: skillshare/fluentd-logging:latest
+          image: alexcurtin/fluentd-logging:latest
           imagePullPolicy: Always
           env:
             - name: FLUENTD_ARGS

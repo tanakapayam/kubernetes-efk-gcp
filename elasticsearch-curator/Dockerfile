@@ -1,5 +1,7 @@
 FROM bobrik/curator
 
+MAINTAINER Alex Curtin <acurtin@westfield.com>
+
 RUN apk --update add bash && \
     rm -rf /var/cache/apk/*
 

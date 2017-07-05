@@ -4,8 +4,6 @@ node.master: ${NODE_MASTER}
 node.data: ${NODE_DATA}
 node.name: ${HOSTNAME}
 
-bootstrap.mlockall: ${BOOTSTRAP_MLOCKALL}
-
 network.host: 0.0.0.0
 transport.tcp.port: ${TRANSPORT_PORT}
 http.port: ${HTTP_PORT}
@@ -15,14 +13,10 @@ cloud:
     service: ${SERVICE}
     namespace: ${KUBERNETES_NAMESPACE}
 
-discovery:
-  type: kubernetes
-  zen:
-    minimum_master_nodes: 2
-    ping:
-      multicast:
-        enabled: false
+discovery.zen.hosts_provider: kubernetes
 
-path:
-  plugins: /usr/share/elasticsearch/plugins
-  data: /data
+discovery.zen.minimum_master_nodes: 2
+
+xpack.security.enabled: false
+
+plugin.mandatory: discovery-kubernetes

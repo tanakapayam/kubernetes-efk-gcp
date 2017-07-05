@@ -4,13 +4,14 @@ metadata:
   name: elasticsearch-logging
   namespace: kube-system
 ---
-apiVersion: storage.k8s.io/v1beta1
+apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: default
-provisioner: kubernetes.io/aws-ebs
+provisioner: kubernetes.io/gce-pd
 parameters:
-  type: gp2
+  type: pd-standard
+  zone: us-central1-a
 ---
 # elasticsearch-transport Service
 # handles discovery for the elasticsearch transport port
@@ -47,8 +48,8 @@ spec:
 ---
 # originally based on:
 # https://github.com/kubernetes/kubernetes/blob/master/cluster/addons/fluentd-elasticsearch/es-controller.yaml
-apiVersion: apps/v1alpha1
-kind: PetSet
+apiVersion: apps/v1beta1
+kind: StatefulSet
 metadata:
   name: elasticsearch-logging
   namespace: kube-system
@@ -63,13 +64,23 @@ spec:
       labels:
         component: elasticsearch-logging
       annotations:
-        pod.alpha.kubernetes.io/initialized: "true"
-        # ^ see http://kubernetes.io/docs/user-guide/petset/#troubleshooting
+        pod.beta.kubernetes.io/initialized: "true"
+        pod.beta.kubernetes.io/init-containers: '[
+          {
+          "name": "sysctl",
+            "image": "busybox",
+            "imagePullPolicy": "IfNotPresent",
+            "command": ["sysctl", "-w", "vm.max_map_count=262144"],
+            "securityContext": {
+              "privileged": true
+            }
+          }
+        ]'
     spec:
       serviceAccountName: elasticsearch-logging
       containers:
         - name: elasticsearch-logging
-          image: skillshare/elasticsearch-logging:latest
+          image: alexcurtin/elasticsearch-logging:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 9200
@@ -92,7 +103,7 @@ spec:
             requests:
               cpu: 100m
         - name: curator
-          image: skillshare/elasticsearch-curator:latest
+          image: alexcurtin/curator:latest
           imagePullPolicy: Always
           env:
             - name: DAYS
@@ -102,8 +113,6 @@ spec:
               cpu: 100m
             requests:
               cpu: 100m
-      imagePullSecrets:
-        - name: awssecret
   volumeClaimTemplates:
     - metadata:
         name: data

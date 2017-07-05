@@ -7,7 +7,6 @@ metadata:
   namespace: kube-system
   labels:
     component: kibana-logging
-    kubernetes.io/cluster-service: "true"
 spec:
   replicas: 1
   selector:
@@ -22,7 +21,7 @@ spec:
     spec:
       containers:
         - name: kibana-logging
-          image: skillshare/kibana-logging:latest
+          image: alexcurtin/kibana-logging:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 5601
@@ -44,10 +43,10 @@ metadata:
   namespace: kube-system
   labels:
     component: kibana-logging
-    kubernetes.io/cluster-service: "true"
 spec:
   selector:
     component: kibana-logging
   ports:
     - port: 80
       targetPort: kibana
+  type: LoadBalancer
