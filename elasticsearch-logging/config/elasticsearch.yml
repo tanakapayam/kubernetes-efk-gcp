@@ -20,3 +20,6 @@ discovery.zen.minimum_master_nodes: 2
 xpack.security.enabled: false
 
 plugin.mandatory: discovery-kubernetes
+
+path:
+  data: /data/
