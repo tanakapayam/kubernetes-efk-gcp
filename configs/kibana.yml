@@ -50,3 +50,5 @@ spec:
     - port: 80
       targetPort: kibana
   type: LoadBalancer
+  loadBalancerSourceRanges:
+    - 209.118.184.61/32
