@@ -1,4 +1,4 @@
-FROM gcr.io/google_containers/fluentd-elasticsearch:1.23
+FROM gcr.io/google_containers/fluentd-elasticsearch:1.19
 
 MAINTAINER Alex Curtin <acurtin@westfield.com>
 
