@@ -53,3 +53,19 @@ spec:
     component: kibana-logging
   sessionAffinity: None
   type: NodePort
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: kibana-ingress
+  annotations:
+    kubernetes.io/ingress.allow-http: "false"
+  namespace: kube-system
+spec:
+  tls:
+  # This assumes tls-secret exists.
+  - secretName: kibana-logging
+  rules:
+  backend:
+    serviceName: kibana-logging
+    servicePort: 80
