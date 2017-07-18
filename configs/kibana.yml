@@ -39,16 +39,17 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kibana-logging
-  namespace: kube-system
   labels:
     component: kibana-logging
+  name: kibana-logging
+  namespace: kube-system
 spec:
+  ports:
+  - name: http-port
+    port: 80
+    protocol: TCP
+    targetPort: kibana
   selector:
     component: kibana-logging
-  ports:
-    - port: 80
-      targetPort: kibana
-  type: LoadBalancer
-  loadBalancerSourceRanges:
-    - 209.118.184.61/32
+  sessionAffinity: None
+  type: NodePort
